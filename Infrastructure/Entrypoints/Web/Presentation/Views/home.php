@@ -1,9 +1,9 @@
 <?php require __DIR__ . '/layouts/header.php'; ?>
 <?php require __DIR__ . '/layouts/menu.php'; ?>
 
-<h1>Menú principal del CRUDL de usuarios</h1>
+    <h1>Menú principal del CRUDL de usuarios</h1>
 
-<p>Desde aquí podrás acceder a las operaciones del sistema.</p>
+    <p>Desde aquí podrás acceder a las operaciones del sistema.</p>
 
 <?php if (!empty($message)): ?>
     <div class="alert-error">
@@ -17,12 +17,22 @@
     </div>
 <?php endif; ?>
 
-<ul>
-    <li><strong>C:</strong> Registrar usuario</li>
-    <li><strong>R:</strong> Consultar usuario</li>
-    <li><strong>U:</strong> Actualizar usuario</li>
-    <li><strong>D:</strong> Eliminar usuario</li>
-    <li><strong>L:</strong> Listar usuarios</li>
-</ul>
+    <ul>
+        <li><strong>C:</strong> Registrar usuario</li>
+        <li><strong>R:</strong> Consultar usuario</li>
+        <li><strong>U:</strong> Actualizar usuario</li>
+        <li><strong>D:</strong> Eliminar usuario</li>
+        <li><strong>L:</strong> Listar usuarios</li>
+    </ul>
+
+    <h2>Vuelos</h2>
+
+    <ul>
+        <li><strong>C:</strong> Registrar vuelo</li>
+        <li><strong>R:</strong> Consultar vuelo</li>
+        <li><strong>U:</strong> Actualizar vuelo</li>
+        <li><strong>D:</strong> Eliminar vuelo</li>
+        <li><strong>L:</strong> Listar vuelos</li>
+    </ul>
 
 <?php require __DIR__ . '/layouts/footer.php'; ?>
