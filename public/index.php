@@ -277,6 +277,108 @@ try {
             View::redirect('auth.forgot');
             break;
 
+        case 'flights.create':
+            View::render('flights/create', buildCreateFlightViewData());
+            break;
+
+        case 'flights.store':
+            $controller = DependencyInjection::getFlightController();
+            $form = getCreateFlightFormData();
+            $form['id'] = generateUuid4();
+            $errors = validateFlightForm($form);
+
+            if (!empty($errors)) {
+                Flash::setOld($form);
+                Flash::setErrors($errors);
+                Flash::setMessage('Corrige los errores del formulario.');
+                View::redirect('flights.create');
+            }
+
+            $controller->store(new CreateFlightWebRequest(
+                $form['id'],
+                $form['purchase_date'],
+                $form['departure_date'],
+                $form['arrival_date'],
+                $form['travel_agency'],
+                $form['airline'],
+                $form['flight_number'],
+                $form['price'],
+                $form['customer'],
+                $form['seat'],
+                $form['aircraft'],
+                $form['departure_airport'],
+                $form['arrival_airport'],
+                $form['pilot']
+            ));
+
+            Flash::setSuccess('Vuelo registrado correctamente.');
+            View::redirect('flights.index');
+            break;
+
+        case 'flights.index':
+            $controller = DependencyInjection::getFlightController();
+            View::render('flights/list', buildListFlightsViewData($controller->index()));
+            break;
+
+        case 'flights.show':
+            $controller = DependencyInjection::getFlightController();
+            $id = isset($_GET['id']) ? trim((string) $_GET['id']) : '';
+            View::render('flights/show', array(
+                'pageTitle' => 'Detalle de vuelo',
+                'flight' => $controller->show($id),
+                'message' => Flash::message(),
+            ));
+            break;
+
+        case 'flights.edit':
+            $controller = DependencyInjection::getFlightController();
+            $id = isset($_GET['id']) ? trim((string) $_GET['id']) : '';
+            View::render('flights/edit', buildEditFlightViewData($controller->show($id)));
+            break;
+
+        case 'flights.update':
+            $controller = DependencyInjection::getFlightController();
+            $form = getUpdateFlightFormData();
+            $errors = validateFlightForm($form, true);
+
+            if (!empty($errors)) {
+                Flash::setOld($form);
+                Flash::setErrors($errors);
+                Flash::setMessage('Corrige los errores del formulario.');
+                header('Location: ?route=flights.edit&id=' . urlencode($form['id']));
+                exit;
+            }
+
+            $controller->update(new UpdateFlightWebRequest(
+                $form['id'],
+                $form['purchase_date'],
+                $form['departure_date'],
+                $form['arrival_date'],
+                $form['travel_agency'],
+                $form['airline'],
+                $form['flight_number'],
+                $form['price'],
+                $form['customer'],
+                $form['seat'],
+                $form['aircraft'],
+                $form['departure_airport'],
+                $form['arrival_airport'],
+                $form['pilot'],
+                $form['status']
+            ));
+
+            Flash::setSuccess('Vuelo actualizado correctamente.');
+            View::redirect('flights.index');
+            break;
+
+        case 'flights.delete':
+            $controller = DependencyInjection::getFlightController();
+            $id = isset($_POST['id']) ? trim((string) $_POST['id']) : '';
+            $controller->delete($id);
+            Flash::setSuccess('Vuelo eliminado correctamente.');
+            View::redirect('flights.index');
+            break;
+
         default:
             throw new RuntimeException('Acción no soportada.');
     }
@@ -314,6 +416,23 @@ try {
         case 'users.delete':
             Flash::setMessage($msg);
             View::redirect('users.index');
+            break;
+
+        case 'flights.store':
+            Flash::setOld(getCreateFlightFormData());
+            View::redirect('flights.create');
+            break;
+
+        case 'flights.update':
+            $updateFlightId = trim((string) ($_POST['id'] ?? ''));
+            Flash::setOld(getUpdateFlightFormData());
+            header('Location: ?route=flights.edit&id=' . urlencode($updateFlightId));
+            exit;
+
+        case 'flights.show':
+        case 'flights.edit':
+        case 'flights.delete':
+            View::redirect('flights.index');
             break;
 
         default:
@@ -502,6 +621,157 @@ function validateUpdateUserForm(array $form): array
 
     if ($form['status'] === '') {
         $errors['status'] = 'El estado es obligatorio.';
+    }
+
+    return $errors;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Vuelos (Flight)
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * @param FlightResponse[] $flights
+ * @return array<string, mixed>
+ */
+function buildListFlightsViewData(array $flights): array
+{
+    return array(
+        'pageTitle' => 'Lista de vuelos',
+        'flights' => $flights,
+        'message' => Flash::message(),
+        'success' => Flash::success(),
+    );
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function buildCreateFlightViewData(): array
+{
+    return array(
+        'pageTitle' => 'Registrar vuelo',
+        'isEdit' => false,
+        'values' => Flash::old(),
+        'message' => Flash::message(),
+        'success' => Flash::success(),
+        'errors' => Flash::errors(),
+    );
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function buildEditFlightViewData(FlightResponse $flight): array
+{
+    return array(
+        'pageTitle' => 'Editar vuelo',
+        'isEdit' => true,
+        'flight' => $flight,
+        'values' => array_merge($flight->toArray(), Flash::old()),
+        'statusOptions' => FlightStatusEnum::values(),
+        'message' => Flash::message(),
+        'errors' => Flash::errors(),
+    );
+}
+
+/**
+ * @return string[]
+ */
+function flightFormKeys(): array
+{
+    return array(
+        'purchase_date',
+        'departure_date',
+        'arrival_date',
+        'travel_agency',
+        'airline',
+        'flight_number',
+        'price',
+        'customer',
+        'seat',
+        'aircraft',
+        'departure_airport',
+        'arrival_airport',
+        'pilot',
+    );
+}
+
+/**
+ * @param string[] $keys
+ * @return array<string, string>
+ */
+function readFlightFormData(array $keys): array
+{
+    $data = array();
+
+    foreach ($keys as $key) {
+        $data[$key] = isset($_POST[$key]) ? trim((string) $_POST[$key]) : '';
+    }
+
+    return $data;
+}
+
+/**
+ * @return array<string, string>
+ */
+function getCreateFlightFormData(): array
+{
+    return readFlightFormData(flightFormKeys());
+}
+
+/**
+ * @return array<string, string>
+ */
+function getUpdateFlightFormData(): array
+{
+    $form = readFlightFormData(flightFormKeys());
+    $form['id'] = isset($_POST['id']) ? trim((string) $_POST['id']) : '';
+    $form['status'] = isset($_POST['status']) ? trim((string) $_POST['status']) : '';
+
+    return $form;
+}
+
+/**
+ * Solo revisa que los campos no lleguen vacíos y que el valor sea numérico.
+ * Las reglas de negocio (formato del vuelo y del puesto, fechas, aeropuertos)
+ * las valida el dominio y se muestran como mensaje general.
+ *
+ * @param array<string, string> $form
+ * @return array<string, string>
+ */
+function validateFlightForm(array $form, bool $isUpdate = false): array
+{
+    $required = array(
+        'flight_number' => 'El número de vuelo',
+        'airline' => 'La aerolínea',
+        'travel_agency' => 'La agencia de viajes',
+        'customer' => 'El cliente',
+        'seat' => 'El puesto',
+        'aircraft' => 'El avión',
+        'pilot' => 'El piloto',
+        'departure_airport' => 'El aeropuerto de salida',
+        'arrival_airport' => 'El aeropuerto de llegada',
+        'purchase_date' => 'La fecha de compra',
+        'departure_date' => 'La fecha de salida',
+        'arrival_date' => 'La fecha de llegada',
+        'price' => 'El valor',
+    );
+
+    if ($isUpdate) {
+        $required['status'] = 'El estado';
+    }
+
+    $errors = array();
+
+    foreach ($required as $field => $label) {
+        if (($form[$field] ?? '') === '') {
+            $errors[$field] = $label . ' es obligatorio.';
+        }
+    }
+
+    if (!isset($errors['price']) && !is_numeric($form['price'])) {
+        $errors['price'] = 'El valor debe ser un número.';
     }
 
     return $errors;

@@ -2,7 +2,7 @@
 /** @var FlightResponse $flight */
 /** @var array<string, string> $values */
 ?>
-
+g
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 <?php require __DIR__ . '/../layouts/menu.php'; ?>
 
