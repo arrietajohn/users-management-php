@@ -1,0 +1,163 @@
+openapi: 3.0.3
+info:
+  title: Móvil Admin API
+  version: 1.0.0
+  description: API JSON para administración de celulares y usuarios. Las autorizaciones dependen del rol asociado al token.
+servers:
+  - url: http://localhost/api/v1
+security:
+  - bearerAuth: []
+paths:
+  /celulares:
+    get:
+      summary: Buscar y paginar celulares
+      parameters:
+        - {in: query, name: q, schema: {type: string}, description: Busca marca, sistema o IMEI}
+        - {in: query, name: marca, schema: {type: string}}
+        - {in: query, name: imei, schema: {type: string}}
+        - {in: query, name: sistema_operativo, schema: {type: string}}
+        - {in: query, name: operador, schema: {type: string}}
+        - {in: query, name: wifi, schema: {type: boolean}}
+        - {in: query, name: bluetooth, schema: {type: boolean}}
+        - {in: query, name: nfc, schema: {type: boolean}}
+        - {in: query, name: huella, schema: {type: boolean}}
+        - {in: query, name: ir, schema: {type: boolean}}
+        - {in: query, name: resiste_agua, schema: {type: boolean}}
+        - {in: query, name: sort, schema: {type: string, enum: [marca, created_at, updated_at, ram, almacenamiento_principal, sistema_operativo, operador]}}
+        - {in: query, name: direction, schema: {type: string, enum: [ASC, DESC]}}
+        - {in: query, name: page, schema: {type: integer, minimum: 1, default: 1}}
+        - {in: query, name: per_page, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        '200': {description: Página de celulares}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      summary: Crear celular
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CelularInput'}
+      responses:
+        '201': {description: Celular creado; cabecera Location apunta al recurso}
+        '409': {description: IMEI duplicado}
+        '422': {description: Validación fallida}
+  /celulares/{id}:
+    parameters:
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    get:
+      summary: Consultar celular
+      responses:
+        '200': {description: Celular encontrado}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      summary: Reemplazar los datos del celular
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CelularInput'}
+      responses:
+        '200': {description: Celular actualizado}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {description: Validación fallida}
+    delete:
+      summary: Eliminar celular
+      responses:
+        '204': {description: Eliminado}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /users:
+    get:
+      summary: Listar usuarios en páginas de hasta 100
+      parameters:
+        - {in: query, name: page, schema: {type: integer, minimum: 1, default: 1}}
+        - {in: query, name: per_page, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        '200': {description: Página de usuarios}
+    post:
+      summary: Crear usuario (solo ADMIN)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, role]
+              properties:
+                name: {type: string, maxLength: 120}
+                email: {type: string, format: email, maxLength: 254}
+                password: {type: string, minLength: 8, writeOnly: true, description: Máximo de 72 bytes UTF-8 por el límite de bcrypt}
+                role: {type: string, enum: [ADMIN, SUPERVISOR, OPERADOR, CONSULTA]}
+      responses:
+        '201': {description: Usuario creado}
+        '409': {description: Correo ya registrado}
+        '422': {description: Validación fallida}
+  /users/{id}:
+    parameters:
+      - {in: path, name: id, required: true, schema: {type: string}}
+    get:
+      summary: Consultar usuario
+      responses:
+        '200': {description: Usuario encontrado}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      summary: Actualizar usuario (solo ADMIN)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, role, status]
+              properties:
+                name: {type: string}
+                email: {type: string, format: email}
+                password: {type: string, writeOnly: true, description: Cadena vacía conserva el hash actual; nueva contraseña de máximo 72 bytes UTF-8}
+                role: {type: string, enum: [ADMIN, SUPERVISOR, OPERADOR, CONSULTA]}
+                status: {type: string, enum: [ACTIVE, INACTIVE, PENDING, BLOCKED]}
+      responses:
+        '200': {description: Usuario actualizado}
+        '422': {description: Validación fallida}
+    delete:
+      summary: Eliminar usuario (solo ADMIN)
+      responses:
+        '204': {description: Eliminado}
+        '404': {$ref: '#/components/responses/NotFound'}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: cat_<256-bit-token>
+  schemas:
+    CelularInput:
+      type: object
+      required: [marca, imei, pulgadas, megapixeles, ram, almacenamientoPrincipal, almacenamientoSecundario, sistemaOperativo, operador, tecnologiaBanda, wifi, bluetooth, camaras, marcaCpu, velocidadCpu, nfc, huella, ir, resisteAgua, cantidadSim]
+      properties:
+        marca: {type: string, maxLength: 80}
+        imei: {type: array, minItems: 1, maxItems: 2, items: {type: string, pattern: '^[0-9]{15}$'}, description: Un IMEI por ranura SIM; el dominio verifica Luhn}
+        pulgadas: {type: number, minimum: 0.01, maximum: 100}
+        megapixeles: {type: number, minimum: 0.01, maximum: 100000}
+        ram: {type: integer, minimum: 1, maximum: 65535, description: GB}
+        almacenamientoPrincipal: {type: integer, minimum: 1, maximum: 65535, description: GB}
+        almacenamientoSecundario: {type: integer, minimum: 0, maximum: 65535, description: GB}
+        sistemaOperativo: {type: string, maxLength: 80}
+        operador: {type: string, maxLength: 80}
+        tecnologiaBanda: {type: string, maxLength: 80}
+        wifi: {type: boolean}
+        bluetooth: {type: boolean}
+        camaras: {type: integer, minimum: 1, maximum: 255}
+        marcaCpu: {type: string, maxLength: 80}
+        velocidadCpu: {type: number, minimum: 0.01, maximum: 1000, description: GHz}
+        nfc: {type: boolean}
+        huella: {type: boolean}
+        ir: {type: boolean}
+        resisteAgua: {type: boolean}
+        cantidadSim: {type: integer, enum: [1, 2]}
+  responses:
+    Unauthorized:
+      description: Bearer token inválido, vencido o revocado
+    Forbidden:
+      description: El rol no tiene el permiso requerido
+    NotFound:
+      description: El recurso no existe

@@ -4,22 +4,32 @@ declare(strict_types=1);
 
 final class Flash
 {
-    public static function start(): void
+    private static function secureSession(): void
     {
+        if (class_exists('Security')) {
+            Security::startSession();
+            return;
+        }
+
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
         }
     }
 
+    public static function start(): void
+    {
+        self::secureSession();
+    }
+
     public static function set(string $key, mixed $value): void
     {
-        self::start();
+        self::secureSession();
         $_SESSION['_flash'][$key] = $value;
     }
 
     public static function get(string $key, mixed $default = null): mixed
     {
-        self::start();
+        self::secureSession();
 
         if (!isset($_SESSION['_flash'][$key])) {
             return $default;

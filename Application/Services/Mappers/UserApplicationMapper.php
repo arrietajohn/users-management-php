@@ -59,7 +59,6 @@ final class UserApplicationMapper
             'id' => $user->id()->value(),
             'name' => $user->name()->value(),
             'email' => $user->email()->value(),
-            'password' => $user->password()->value(),
             'role' => $user->role(),
             'status' => $user->status()
         );

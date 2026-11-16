@@ -47,7 +47,8 @@ final class UserPersistenceMapper
             (string) $row['role'],
             (string) $row['status'],
             isset($row['created_at']) ? (string) $row['created_at'] : null,
-            isset($row['updated_at']) ? (string) $row['updated_at'] : null
+            isset($row['updated_at']) ? (string) $row['updated_at'] : null,
+            isset($row['authorization_version']) ? (int) $row['authorization_version'] : 1
         );
     }
 
@@ -59,7 +60,8 @@ final class UserPersistenceMapper
             new UserEmail($entity->email()),
             UserPassword::fromHash($entity->password()),
             $entity->role(),
-            $entity->status()
+            $entity->status(),
+            $entity->authorizationVersion()
         );
     }
 

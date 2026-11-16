@@ -13,10 +13,34 @@ php_errors.log
 
 # Configuración local sensible
 .env
-.env.local
-.env.*.local
+.env.*
 # La plantilla SÍ se sube al repositorio
 !.env.example
+
+# Credenciales, claves privadas y tokens
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+id_rsa*
+id_ed25519*
+credentials*.json
+*-credentials.json
+secrets.*
+*.token
+
+# Material académico local (no forma parte del proyecto)
+docs/entrega-academica.pdf
+docs/guion-sustentacion.md
+
+# Herramientas locales de agentes y navegador
+.claude/
+.agents/
+.playwright-mcp/
+CLAUDE.md
+skills-lock.json
+graphify-out/
 
 
 # Base de datos — solo dumps de datos (los scripts de esquema SÍ van al repo)
@@ -76,6 +100,5 @@ yarn-error.log*
 # Documentación tecnica, diagramas, manuales, pasos para montar el entorno de desarrollo, etc.
 
 
-docs/
 .vscode/settings.json
 *.ps1

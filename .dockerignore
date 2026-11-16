@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+!.env.example
+PROMPT.md
+vendor
+node_modules
+tests
+docs
+*.log

@@ -38,7 +38,7 @@ final class CreateUserService implements CreateUserUseCase
         $user = UserApplicationMapper::fromCreateCommandToModel($command);
 
         $savedUser = $this->saveUserPort->save($user);
-        $this->emailNotification->notifyUserCreated($savedUser, $command->getPassword());
+        $this->emailNotification->notifyUserCreated($savedUser);
 
         return $savedUser;
     }

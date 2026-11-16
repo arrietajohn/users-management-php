@@ -17,6 +17,7 @@ final class UserModel
     private UserPassword $password;
     private string $role;
     private string $status;
+    private int $authorizationVersion;
 
     public function __construct(
         UserId $id,
@@ -24,10 +25,14 @@ final class UserModel
         UserEmail $email,
         UserPassword $password,
         string $role,
-        string $status
+        string $status,
+        int $authorizationVersion = 1
     ) {
         UserRoleEnum::ensureIsValid($role);
         UserStatusEnum::ensureIsValid($status);
+        if ($authorizationVersion < 1) {
+            throw new InvalidArgumentException('La versión de autorización debe ser positiva.');
+        }
 
         $this->id = $id;
         $this->name = $name;
@@ -35,6 +40,7 @@ final class UserModel
         $this->password = $password;
         $this->role = $role;
         $this->status = $status;
+        $this->authorizationVersion = $authorizationVersion;
     }
 
     public static function create(
@@ -84,6 +90,11 @@ final class UserModel
         return $this->status;
     }
 
+    public function authorizationVersion(): int
+    {
+        return $this->authorizationVersion;
+    }
+
     public function activate(): self
     {
         return new self(
@@ -92,7 +103,8 @@ final class UserModel
             $this->email,
             $this->password,
             $this->role,
-            UserStatusEnum::ACTIVE
+            UserStatusEnum::ACTIVE,
+            $this->authorizationVersion
         );
     }
 
@@ -104,7 +116,8 @@ final class UserModel
             $this->email,
             $this->password,
             $this->role,
-            UserStatusEnum::INACTIVE
+            UserStatusEnum::INACTIVE,
+            $this->authorizationVersion
         );
     }
 
@@ -116,7 +129,8 @@ final class UserModel
             $this->email,
             $this->password,
             $this->role,
-            UserStatusEnum::BLOCKED
+            UserStatusEnum::BLOCKED,
+            $this->authorizationVersion
         );
     }
 
@@ -128,7 +142,8 @@ final class UserModel
             $this->email,
             $this->password,
             $this->role,
-            $this->status
+            $this->status,
+            $this->authorizationVersion
         );
     }
 
@@ -140,7 +155,8 @@ final class UserModel
             $email,
             $this->password,
             $this->role,
-            $this->status
+            $this->status,
+            $this->authorizationVersion
         );
     }
 
@@ -152,7 +168,8 @@ final class UserModel
             $this->email,
             $password,
             $this->role,
-            $this->status
+            $this->status,
+            $this->authorizationVersion
         );
     }
 
@@ -164,7 +181,8 @@ final class UserModel
             $this->email,
             $this->password,
             $role,
-            $this->status
+            $this->status,
+            $this->authorizationVersion
         );
     }
 
@@ -174,9 +192,8 @@ final class UserModel
             'id' => $this->id->value(),
             'name' => $this->name->value(),
             'email' => $this->email->value(),
-            'password' => $this->password->value(),
             'role' => $this->role,
-            'status' => $this->status
+            'status' => $this->status,
         );
     }
 }

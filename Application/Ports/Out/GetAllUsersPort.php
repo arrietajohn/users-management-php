@@ -9,5 +9,6 @@ interface GetAllUsersPort
     /**
      * @return UserModel[]
      */
-    public function getAll(): array;
+    public function getAll(int $limit, int $offset): array;
+    public function countAll(): int;
 }

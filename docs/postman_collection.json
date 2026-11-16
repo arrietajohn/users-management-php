@@ -1,0 +1,51 @@
+{
+  "info": {
+    "name": "Móvil Admin API v1",
+    "description": "Importa docs/postman_environment.example.json. No contiene tokens válidos. Genera un token de cuenta activa con php bin/create-api-token.php y guárdalo como variable secreta api_token en Postman.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{"key": "token", "value": "{{api_token}}", "type": "string"}]
+  },
+  "variable": [
+    {"key": "base_url", "value": "http://localhost:8080/api/v1"},
+    {"key": "api_token", "value": "", "type": "secret"},
+    {"key": "operator_token", "value": "", "type": "secret"},
+    {"key": "celular_id", "value": ""},
+    {"key": "user_id", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "Autenticación y errores",
+      "item": [
+        {"name": "401 - sin Bearer", "request": {"auth": {"type": "noauth"}, "method": "GET", "url": "{{base_url}}/celulares"}},
+        {"name": "403 - OPERADOR consulta usuarios", "request": {"auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{operator_token}}", "type": "string"}]}, "method": "GET", "url": "{{base_url}}/users"}},
+        {"name": "404 - celular inexistente", "request": {"method": "GET", "url": "{{base_url}}/celulares/no-existe"}},
+        {"name": "422 - IMEI inválido", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"marca\":\"Prueba\",\"imei\":[\"123456789012345\"],\"pulgadas\":6.7,\"megapixeles\":50,\"ram\":8,\"almacenamientoPrincipal\":256,\"almacenamientoSecundario\":0,\"sistemaOperativo\":\"Android\",\"operador\":\"Libre\",\"tecnologiaBanda\":\"5G\",\"wifi\":true,\"bluetooth\":true,\"camaras\":3,\"marcaCpu\":\"Qualcomm\",\"velocidadCpu\":3.2,\"nfc\":true,\"huella\":true,\"ir\":false,\"resisteAgua\":true,\"cantidadSim\":1}"}, "url": "{{base_url}}/celulares"}},
+        {"name": "429 - límite API (ejecutar solo para validarlo)", "request": {"method": "GET", "url": "{{base_url}}/celulares?page=1&per_page=20"}, "description": "La cuota es 120/minuto por identidad y 300/minuto por IP. Requiere generar deliberadamente el exceso; no ejecutar en una colección normal."},
+        {"name": "503 - infraestructura no disponible", "request": {"method": "GET", "url": "{{base_url}}/celulares"}, "description": "Verifica JSON 503 solo en un entorno aislado cuando MySQL o el limitador no están disponibles. No desconectes servicios compartidos para probarlo."}
+      ]
+    },
+    {
+      "name": "Celulares",
+      "item": [
+        {"name": "Listar, buscar, filtrar y paginar", "request": {"method": "GET", "url": "{{base_url}}/celulares?page=1&per_page=20&q=Samsung&nfc=1&wifi=1&sort=marca&direction=asc"}},
+        {"name": "Consultar celular", "request": {"method": "GET", "url": "{{base_url}}/celulares/{{celular_id}}"}},
+        {"name": "Crear celular (20 atributos)", "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 201) pm.environment.set('celular_id', pm.response.json().data.id);"]}}], "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"marca\": \"Ejemplo\",\n  \"imei\": [\"490154203237518\"],\n  \"pulgadas\": 6.7,\n  \"megapixeles\": 50,\n  \"ram\": 8,\n  \"almacenamientoPrincipal\": 256,\n  \"almacenamientoSecundario\": 0,\n  \"sistemaOperativo\": \"Android\",\n  \"operador\": \"Libre\",\n  \"tecnologiaBanda\": \"5G\",\n  \"wifi\": true,\n  \"bluetooth\": true,\n  \"camaras\": 3,\n  \"marcaCpu\": \"Qualcomm\",\n  \"velocidadCpu\": 3.2,\n  \"nfc\": true,\n  \"huella\": true,\n  \"ir\": false,\n  \"resisteAgua\": true,\n  \"cantidadSim\": 1\n}"}, "url": "{{base_url}}/celulares"}},
+        {"name": "Actualizar celular (20 atributos)", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"marca\": \"Ejemplo actualizado\",\n  \"imei\": [\"490154203237518\"],\n  \"pulgadas\": 6.7,\n  \"megapixeles\": 50,\n  \"ram\": 8,\n  \"almacenamientoPrincipal\": 256,\n  \"almacenamientoSecundario\": 0,\n  \"sistemaOperativo\": \"Android\",\n  \"operador\": \"Libre\",\n  \"tecnologiaBanda\": \"5G\",\n  \"wifi\": true,\n  \"bluetooth\": true,\n  \"camaras\": 3,\n  \"marcaCpu\": \"Qualcomm\",\n  \"velocidadCpu\": 3.2,\n  \"nfc\": true,\n  \"huella\": true,\n  \"ir\": false,\n  \"resisteAgua\": true,\n  \"cantidadSim\": 1\n}"}, "url": "{{base_url}}/celulares/{{celular_id}}"}},
+        {"name": "Eliminar celular", "request": {"method": "DELETE", "url": "{{base_url}}/celulares/{{celular_id}}"}}
+      ]
+    },
+    {
+      "name": "Usuarios (solo ADMIN)",
+      "item": [
+        {"name": "Listar usuarios (paginado)", "request": {"method": "GET", "url": "{{base_url}}/users?page=1&per_page=20"}},
+        {"name": "Consultar usuario", "request": {"method": "GET", "url": "{{base_url}}/users/{{user_id}}"}},
+        {"name": "Crear usuario", "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["if (pm.response.code === 201) pm.environment.set('user_id', pm.response.json().data.id);"]}}], "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"name\": \"Operador de prueba\",\n  \"email\": \"postman-{{$timestamp}}@example.test\",\n  \"password\": \"{{new_user_password}}\",\n  \"role\": \"OPERADOR\"\n}"}, "url": "{{base_url}}/users"}},
+        {"name": "Actualizar usuario", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"name\": \"Operador actualizado\",\n  \"email\": \"postman-updated-{{$timestamp}}@example.test\",\n  \"password\": \"\",\n  \"role\": \"OPERADOR\",\n  \"status\": \"ACTIVE\"\n}"}, "url": "{{base_url}}/users/{{user_id}}"}},
+        {"name": "Eliminar usuario", "request": {"method": "DELETE", "url": "{{base_url}}/users/{{user_id}}"}}
+      ]
+    }
+  ]
+}

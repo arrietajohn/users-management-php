@@ -4,6 +4,8 @@ require_once __DIR__ . '/../Exceptions/InvalidUserPasswordException.php';
 
 class UserPassword
 {
+    private const MAX_BCRYPT_PASSWORD_BYTES = 72;
+
     private $value;
 
     public function __construct($value)
@@ -35,6 +37,10 @@ class UserPassword
 
         if (strlen($normalizedValue) < 8) {
             throw InvalidUserPasswordException::becauseLengthIsTooShort(8);
+        }
+
+        if (strlen($normalizedValue) > self::MAX_BCRYPT_PASSWORD_BYTES) {
+            throw InvalidUserPasswordException::becauseLengthIsTooLong(self::MAX_BCRYPT_PASSWORD_BYTES);
         }
 
         // BCrypt hash is 60+ characters; passes the constructor min-8 check.

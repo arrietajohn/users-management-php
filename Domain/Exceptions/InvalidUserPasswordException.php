@@ -11,5 +11,10 @@ class InvalidUserPasswordException extends InvalidArgumentException
     {
         return new self('The user password must contain at least ' . $minLength . ' characters.');
     }
+
+    public static function becauseLengthIsTooLong($maxBytes)
+    {
+        return new self('The user password must not exceed ' . $maxBytes . ' bytes.');
+    }
 }
 

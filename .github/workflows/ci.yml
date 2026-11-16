@@ -1,0 +1,72 @@
+name: PHP CI
+
+on:
+  push:
+    branches: [main, feat/crud-celulares]
+  pull_request:
+    branches: [main, feat/crud-celulares]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root-password
+          MYSQL_DATABASE: crud_usuarios
+          MYSQL_USER: crud_app
+          MYSQL_PASSWORD: ci-app-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-root-password --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+    env:
+      CI: "true"
+      APP_ENV: ci
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: crud_usuarios
+      DB_USERNAME: crud_app
+      DB_PASSWORD: ci-app-password
+      DB_CHARSET: utf8mb4
+      APP_SECRET: ci-only-secret-value-at-least-32-characters
+      APP_BASE_URL: http://localhost
+      RUN_DB_INTEGRATION: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, session, openssl
+          coverage: none
+      - name: Check syntax
+        run: find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
+      - name: Run unit tests
+        run: php tests/run.php
+      - name: Wait for MySQL over the application PDO connection
+        run: php bin/wait-for-database.php
+      - name: Apply migrations in disposable CI database
+        run: php bin/migrate.php
+      - name: Run MySQL integration tests
+        run: php tests/integration.php
+      - name: Build Docker image
+        run: docker build -t movil-admin:ci .
+      - name: Inventory vendored PHPMailer
+        run: php -r 'require "Infrastructure/Adapters/Email/PHPMailer/src/PHPMailer.php"; $class = "PHPMailer" . chr(92) . "PHPMailer" . chr(92) . "PHPMailer"; $version = constant($class . "::VERSION"); if ($version !== "6.9.1") { exit(1); } echo $version, PHP_EOL;'
+      - name: Audit vendored PHPMailer advisories with OSV
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(php -r 'require "Infrastructure/Adapters/Email/PHPMailer/src/PHPMailer.php"; $class = "PHPMailer" . chr(92) . "PHPMailer" . chr(92) . "PHPMailer"; echo constant($class . "::VERSION");')"
+          payload="$(printf '{\"package\":{\"name\":\"phpmailer/phpmailer\",\"ecosystem\":\"Packagist\"},\"version\":\"%s\"}' "$version")"
+          response="$(curl --fail --silent --show-error -H 'Content-Type: application/json' --data "$payload" https://api.osv.dev/v1/query)"
+          printf '%s' "$response" | jq -e '(.vulns // []) | length == 0' >/dev/null

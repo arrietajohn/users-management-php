@@ -12,6 +12,7 @@ final class UserEntity
     private string $status;
     private ?string $createdAt;
     private ?string $updatedAt;
+    private int $authorizationVersion;
 
     public function __construct(
         string $id,
@@ -21,7 +22,8 @@ final class UserEntity
         string $role,
         string $status,
         ?string $createdAt = null,
-        ?string $updatedAt = null
+        ?string $updatedAt = null,
+        int $authorizationVersion = 1
     ) {
         $this->id = trim($id);
         $this->name = trim($name);
@@ -31,6 +33,7 @@ final class UserEntity
         $this->status = trim($status);
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
+        $this->authorizationVersion = $authorizationVersion;
     }
 
     public function id(): string
@@ -71,5 +74,10 @@ final class UserEntity
     public function updatedAt(): ?string
     {
         return $this->updatedAt;
+    }
+
+    public function authorizationVersion(): int
+    {
+        return $this->authorizationVersion;
     }
 }

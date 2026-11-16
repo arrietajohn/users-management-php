@@ -11,6 +11,8 @@ require_once __DIR__ . '/../../../../Application/Ports/In/GetAllUsersUseCase.php
 require_once __DIR__ . '/../../../../Application/Ports/In/DeleteUserUseCase.php';
 
 require_once __DIR__ . '/../../../../Application/Services/Dto/Queries/GetAllUsersQuery.php';
+require_once __DIR__ . '/../../../../Application/Services/Dto/Queries/UserPage.php';
+require_once __DIR__ . '/Dto/UserResponsePage.php';
 
 final class UserController
 {
@@ -40,11 +42,16 @@ final class UserController
     /**
      * @return UserResponse[]
      */
-    public function index(): array
+    public function index(int $page = 1, int $perPage = 20): UserResponsePage
     {
-        $users = $this->getAllUsersUseCase->execute(new GetAllUsersQuery());
+        $users = $this->getAllUsersUseCase->execute(new GetAllUsersQuery($page, $perPage));
 
-        return $this->mapper->fromModelsToResponses($users);
+        return new UserResponsePage(
+            $this->mapper->fromModelsToResponses($users->users()),
+            $users->total(),
+            $users->page(),
+            $users->perPage()
+        );
     }
 
     public function show(string $id): UserResponse

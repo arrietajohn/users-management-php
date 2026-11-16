@@ -16,11 +16,11 @@ final class EmailNotificationService
         $this->emailSenderPort = $emailSenderPort;
     }
 
-    public function notifyUserCreated(UserModel $user, string $plainPassword): void
+    public function notifyUserCreated(UserModel $user): void
     {
         try {
             $subject = 'Tu cuenta ha sido creada — CRUD Usuarios';
-            $body = $this->buildUserCreatedBody($user, $plainPassword);
+            $body = $this->buildUserCreatedBody($user);
 
             $destination = new EmailDestinationModel(
                 $user->email()->value(),
@@ -32,8 +32,7 @@ final class EmailNotificationService
             $this->emailSenderPort->send($destination);
 
         } catch (EmailSenderException $e) {
-            error_log('[EmailNotificationService] ' . $e->getMessage());
-            throw $e;
+            error_log('[EmailNotificationService] User-created notification delivery failed.');
         }
     }
 
@@ -53,12 +52,11 @@ final class EmailNotificationService
             $this->emailSenderPort->send($destination);
 
         } catch (EmailSenderException $e) {
-            error_log('[EmailNotificationService] ' . $e->getMessage());
-            throw $e;
+            error_log('[EmailNotificationService] User-updated notification delivery failed.');
         }
     }
 
-    private function buildUserCreatedBody(UserModel $user, string $plainPassword): string
+    private function buildUserCreatedBody(UserModel $user): string
     {
         $templatePath = $this->resolveTemplatePath('user-created.html');
 
@@ -69,11 +67,10 @@ final class EmailNotificationService
         $html = (string) file_get_contents($templatePath);
 
         return str_replace(
-            ['[[nombre]]', '[[email]]', '[[pass]]', '[[rol]]'],
+            ['[[nombre]]', '[[email]]', '[[rol]]'],
             [
                 htmlspecialchars($user->name()->value(), ENT_QUOTES, 'UTF-8'),
                 htmlspecialchars($user->email()->value(), ENT_QUOTES, 'UTF-8'),
-                htmlspecialchars($plainPassword, ENT_QUOTES, 'UTF-8'),
                 htmlspecialchars($user->role(), ENT_QUOTES, 'UTF-8'),
             ],
             $html

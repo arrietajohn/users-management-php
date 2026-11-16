@@ -42,6 +42,13 @@ final class WebRoutes
                 'method' => 'POST',
                 'action' => 'delete',
             ),
+            'celulares.index' => array('method' => 'GET', 'action' => 'celulares.index'),
+            'celulares.create' => array('method' => 'GET', 'action' => 'celulares.create'),
+            'celulares.store' => array('method' => 'POST', 'action' => 'celulares.store'),
+            'celulares.show' => array('method' => 'GET', 'action' => 'celulares.show'),
+            'celulares.edit' => array('method' => 'GET', 'action' => 'celulares.edit'),
+            'celulares.update' => array('method' => 'POST', 'action' => 'celulares.update'),
+            'celulares.delete' => array('method' => 'POST', 'action' => 'celulares.delete'),
             'auth.login' => array(
                 'method' => 'GET',
                 'action' => 'login',
@@ -51,7 +58,7 @@ final class WebRoutes
                 'action' => 'authenticate',
             ),
             'auth.logout' => array(
-                'method' => 'GET',
+                'method' => 'POST',
                 'action' => 'logout',
             ),
             'auth.forgot' => array(
@@ -61,6 +68,14 @@ final class WebRoutes
             'auth.forgot.send' => array(
                 'method' => 'POST',
                 'action' => 'forgot.send',
+            ),
+            'auth.reset' => array(
+                'method' => 'GET',
+                'action' => 'reset',
+            ),
+            'auth.reset.submit' => array(
+                'method' => 'POST',
+                'action' => 'reset.submit',
             ),
         );
     }

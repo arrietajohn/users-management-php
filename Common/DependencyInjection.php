@@ -7,6 +7,8 @@ require_once __DIR__ . '/EnvLoader.php';
 
 final class DependencyInjection
 {
+    private static ?PDO $pdo = null;
+
     public static function boot(): void
     {
         EnvLoader::load(dirname(__DIR__) . '/.env');
@@ -29,7 +31,10 @@ final class DependencyInjection
 
     public static function getPdo(): PDO
     {
-        return self::getConnection()->createPdo();
+        if (self::$pdo === null) {
+            self::$pdo = self::getConnection()->createPdo();
+        }
+        return self::$pdo;
     }
 
     public static function getUserPersistenceMapper(): UserPersistenceMapper
@@ -155,5 +160,70 @@ final class DependencyInjection
         return new LoginService(
             self::getUserRepository()
         );
+    }
+
+    public static function getPasswordResetService(): PasswordResetService
+    {
+        ClassLoader::loadClass('PasswordResetService');
+        ClassLoader::loadClass('PasswordResetRepositoryMySQL');
+
+        return new PasswordResetService(
+            new PasswordResetRepositoryMySQL(self::getPdo()),
+            self::getUserRepository()
+        );
+    }
+
+    public static function getRateLimitService(): RateLimitService
+    {
+        ClassLoader::loadClass('RateLimitService');
+        ClassLoader::loadClass('RateLimitRepositoryMySQL');
+
+        return new RateLimitService(
+            new RateLimitRepositoryMySQL(self::getPdo()),
+            EnvLoader::get('APP_SECRET')
+        );
+    }
+
+    public static function getCelularController(): CelularController
+    {
+        ClassLoader::loadClass('CelularController');
+        ClassLoader::loadClass('CelularPersistenceMapper');
+        ClassLoader::loadClass('CelularRepositoryMySQL');
+        ClassLoader::loadClass('CelularService');
+        ClassLoader::loadClass('CelularWebMapper');
+
+        return new CelularController(
+            new CelularService(new CelularRepositoryMySQL(self::getPdo(), new CelularPersistenceMapper())),
+            new CelularWebMapper()
+        );
+    }
+
+    public static function getDashboardService(): DashboardService
+    {
+        ClassLoader::loadClass('DashboardService');
+        ClassLoader::loadClass('CelularRepositoryMySQL');
+        ClassLoader::loadClass('CelularPersistenceMapper');
+        ClassLoader::loadClass('ActivityLogService');
+        ClassLoader::loadClass('ActivityLogRepositoryMySQL');
+
+        return new DashboardService(
+            new CelularRepositoryMySQL(self::getPdo(), new CelularPersistenceMapper()),
+            self::getUserRepository(),
+            new ActivityLogService(new ActivityLogRepositoryMySQL(self::getPdo()))
+        );
+    }
+
+    public static function getActivityLogService(): ActivityLogService
+    {
+        ClassLoader::loadClass('ActivityLogService');
+        ClassLoader::loadClass('ActivityLogRepositoryMySQL');
+        return new ActivityLogService(new ActivityLogRepositoryMySQL(self::getPdo()));
+    }
+
+    public static function getApiTokenService(): ApiTokenService
+    {
+        ClassLoader::loadClass('ApiTokenService');
+        ClassLoader::loadClass('ApiTokenRepositoryMySQL');
+        return new ApiTokenService(new ApiTokenRepositoryMySQL(self::getPdo()));
     }
 }
